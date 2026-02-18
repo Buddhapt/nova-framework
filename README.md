@@ -68,6 +68,6 @@ This project is licensed under the GPL-3.0 License — see the [LICENSE](LICENSE
 
 **NOVA Framework** — Made with care for the FiveM community.
 
-[Documentation](https://novaframeworkdoc.gitbook.io/novaframework/) · [Discord](https://discord.gg/dxYfwqYRD) · [GitHub](https://github.com/NoVaPTdev)
+[Documentation](https://novaframeworkdoc.gitbook.io/novaframework/) · [Discord](https://discord.gg/novaframeworkofc) · [GitHub](https://github.com/NoVaPTdev)
 
 </div>
