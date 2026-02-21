@@ -67,6 +67,108 @@ body {
 }
 
 /* ============================================================
+   TP COORDS PANEL
+   ============================================================ */
+
+#tpcds-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    background: transparent;
+}
+
+#tpcds-overlay.hidden {
+    display: none;
+}
+
+#tpcds-panel {
+    width: 340px;
+    background: rgba(12, 14, 18, 0.92);
+    border: 1px solid rgba(197, 255, 0, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(197, 255, 0, 0.06);
+    overflow: hidden;
+    animation: tpcdsSlideIn 0.2s ease-out;
+}
+
+@keyframes tpcdsSlideIn {
+    from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.tpcds-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tpcds-icon {
+    width: 22px;
+    height: 22px;
+    color: #C5FF00;
+    flex-shrink: 0;
+}
+
+.tpcds-icon svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 4px rgba(197, 255, 0, 0.4));
+}
+
+.tpcds-header span {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.tpcds-body {
+    padding: 16px 20px;
+}
+
+#tpcds-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(197, 255, 0, 0.15);
+    border-radius: 8px;
+    color: #ffffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#tpcds-input::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+    font-family: 'Segoe UI', sans-serif;
+    font-style: italic;
+    font-size: 13px;
+}
+
+#tpcds-input:focus {
+    border-color: rgba(197, 255, 0, 0.45);
+    box-shadow: 0 0 12px rgba(197, 255, 0, 0.1);
+}
+
+.tpcds-footer {
+    padding: 10px 20px 14px;
+}
+
+.tpcds-hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.3px;
+}
+
+/* ============================================================
    ANIMAÇÕES
    ============================================================ */
 

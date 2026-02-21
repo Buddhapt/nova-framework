@@ -11,11 +11,10 @@ if not NovaConfig.Weather or not NovaConfig.Weather.enabled then return end
 -- ============================================================
 
 local currentWeather  = 'CLEAR'
-local targetWeather   = 'CLEAR'
 local currentHour     = 8
 local currentMinute   = 0
 local weatherReady    = false
-local transitionTimer = 0.0
+local lastWindWeather = ''
 
 -- ============================================================
 -- EVENTO: Receber sync do servidor
@@ -28,8 +27,12 @@ RegisterNetEvent('nova:client:syncWeather', function(data)
     currentMinute = data.minute or currentMinute
 
     if data.weather and data.weather ~= currentWeather then
-        targetWeather  = data.weather
-        transitionTimer = 0.0
+        currentWeather = data.weather
+        ClearWeatherTypePersist()
+        ClearOverrideWeather()
+        SetWeatherTypeNowPersist(currentWeather)
+        SetWeatherTypeNow(currentWeather)
+        SetOverrideWeather(currentWeather)
     end
 
     weatherReady = true
@@ -44,73 +47,34 @@ AddEventHandler('playerSpawned', function()
 end)
 
 -- ============================================================
--- THREAD PRINCIPAL: Aplicar clima e hora
+-- THREAD: Aplicar hora e manter weather
 -- ============================================================
 
 CreateThread(function()
-    -- Pedir estado inicial
     Wait(2000)
     TriggerServerEvent('nova:server:requestWeather')
 
     while true do
-        Wait(100)
-
         if weatherReady then
-            -- ==== DESATIVAR WEATHER NATIVO ====
-            -- Impedir o jogo de mudar o clima sozinho
-            SetArtificialLightsState(false)
-            
-            -- ==== APLICAR HORA ====
             NetworkOverrideClockTime(currentHour, currentMinute, 0)
 
-            -- ==== TRANSIÇÃO SUAVE DE CLIMA ====
-            if targetWeather ~= currentWeather then
-                transitionTimer = transitionTimer + 0.01
-                if transitionTimer >= 1.0 then
-                    currentWeather = targetWeather
-                    transitionTimer = 0.0
-                    SetWeatherTypeNowPersist(currentWeather)
-                    SetWeatherTypeNow(currentWeather)
-                else
-                    SetWeatherTypeOvertimePersist(targetWeather, 15.0)
-                end
-            else
-                SetWeatherTypeNowPersist(currentWeather)
-            end
-
-            -- Forçar override para impedir mudanças nativas
-            ClearOverrideWeather()
-            ClearWeatherTypePersist()
-            SetWeatherTypePersist(currentWeather)
-            SetWeatherTypeNow(currentWeather)
+            -- Forçar o weather a cada tick para impedir o GTA de mudar sozinho
             SetOverrideWeather(currentWeather)
         end
+        Wait(250)
     end
 end)
 
 -- ============================================================
--- THREAD: Impedir relógio nativo de avançar
+-- WIND (efeitos visuais para chuva/trovoada)
 -- ============================================================
 
 CreateThread(function()
     while true do
-        Wait(0)
-        -- Não deixar o relógio nativo avançar
-        if weatherReady then
-            NetworkOverrideClockTime(currentHour, currentMinute, 0)
-        end
-    end
-end)
+        Wait(2000)
 
--- ============================================================
--- WIND (efeitos visuais melhorados para chuva/trovoada)
--- ============================================================
-
-CreateThread(function()
-    while true do
-        Wait(1000)
-
-        if weatherReady then
+        if weatherReady and currentWeather ~= lastWindWeather then
+            lastWindWeather = currentWeather
             if currentWeather == 'RAIN' or currentWeather == 'THUNDER' then
                 SetWind(0.5)
                 SetWindSpeed(8.0)

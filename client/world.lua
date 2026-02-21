@@ -53,58 +53,73 @@ local dispatchServices = {
 }
 
 -- ============================================================
--- THREAD PRINCIPAL: Densidades + Wanted + Dispatch
+-- THREAD: Densidades (precisam ser aplicadas a cada frame)
 -- ============================================================
 
 CreateThread(function()
-    -- Aplicar configurações iniciais de densidade
-    SetVehicleDensityMultiplierThisFrame(WorldConfig.vehicleDensity)
-    SetParkedVehicleDensityMultiplierThisFrame(WorldConfig.parkedDensity)
-    SetPedDensityMultiplierThisFrame(WorldConfig.pedDensity)
-
-    if WorldConfig.randomVehicles == false then
-        SetRandomVehicleDensityMultiplierThisFrame(0.0)
-    end
-
     while true do
-        -- ── Densidades (precisam ser aplicadas a cada frame) ──
         SetVehicleDensityMultiplierThisFrame(WorldConfig.vehicleDensity)
         SetParkedVehicleDensityMultiplierThisFrame(WorldConfig.parkedDensity)
         SetPedDensityMultiplierThisFrame(WorldConfig.pedDensity)
-        SetRandomVehicleDensityMultiplierThisFrame(WorldConfig.vehicleDensity)
+        if WorldConfig.randomVehicles == false then
+            SetRandomVehicleDensityMultiplierThisFrame(0.0)
+        else
+            SetRandomVehicleDensityMultiplierThisFrame(WorldConfig.vehicleDensity)
+        end
+        Wait(0)
+    end
+end)
 
-        -- ── Remover Wanted Level ──
+-- ============================================================
+-- THREAD: Wanted + Dispatch + Polícia (periodic, não por frame)
+-- ============================================================
+
+CreateThread(function()
+    -- Aplicar uma vez ao iniciar
+    if WorldConfig.disableWanted then
+        SetMaxWantedLevel(0)
+        SetPlayerWantedLevel(PlayerId(), 0, false)
+        SetPlayerWantedLevelNow(PlayerId(), false)
+    end
+    if WorldConfig.disableDispatch then
+        for _, serviceId in ipairs(dispatchServices) do
+            EnableDispatchService(serviceId, false)
+        end
+    end
+    if WorldConfig.disablePolice then
+        SetGarbageTrucks(false)
+        SetRandomBoats(false)
+        SetRandomTrains(false)
+        for i = 1, 15 do
+            EnableDispatchService(i, false)
+        end
+    end
+
+    while true do
+        Wait(1000)
+
         if WorldConfig.disableWanted then
-            local ped = PlayerPedId()
             if GetPlayerWantedLevel(PlayerId()) > 0 then
                 SetPlayerWantedLevel(PlayerId(), 0, false)
                 SetPlayerWantedLevelNow(PlayerId(), false)
             end
-            -- Impedir que o wanted level suba
             SetMaxWantedLevel(0)
         end
 
-        -- ── Desactivar Dispatch Services ──
         if WorldConfig.disableDispatch then
             for _, serviceId in ipairs(dispatchServices) do
                 EnableDispatchService(serviceId, false)
             end
         end
 
-        -- ── Desactivar polícia ──
         if WorldConfig.disablePolice then
-            -- Remover blips de polícia do mapa
             SetGarbageTrucks(false)
             SetRandomBoats(false)
             SetRandomTrains(false)
-
-            -- Impedir que a polícia NPC apareça
             for i = 1, 15 do
                 EnableDispatchService(i, false)
             end
         end
-
-        Wait(0)
     end
 end)
 

@@ -76,6 +76,23 @@ window.addEventListener('message', (event) => {
             }
             progressContainer.classList.add('hidden');
             break;
+
+        case 'openTpcds':
+            openTpcds();
+            break;
+
+        case 'copyToClipboard':
+            if (data.text) {
+                const ta = document.createElement('textarea');
+                ta.value = data.text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            break;
     }
 });
 
@@ -111,9 +128,61 @@ function GetParentResourceName() {
     return window.__cfx_nui_resource || 'nova_core';
 }
 
-// Fechar UI com ESC
+// ============================================================
+// TP COORDS PANEL
+// ============================================================
+
+const tpcdsOverlay = document.getElementById('tpcds-overlay');
+const tpcdsInput = document.getElementById('tpcds-input');
+let tpcdsOpen = false;
+
+function openTpcds() {
+    tpcdsInput.value = '';
+    tpcdsOverlay.classList.remove('hidden');
+    tpcdsOpen = true;
+    setTimeout(() => tpcdsInput.focus(), 50);
+}
+
+function closeTpcds(coords) {
+    tpcdsOverlay.classList.add('hidden');
+    tpcdsOpen = false;
+    nuiCallback('tpcds_result', coords || { cancelled: true });
+}
+
+tpcdsInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const raw = tpcdsInput.value.trim();
+        if (!raw) return;
+
+        let x, y, z;
+        const vec3 = raw.match(/vector3\(\s*([-.\d]+)\s*,\s*([-.\d]+)\s*,\s*([-.\d]+)\s*\)/i);
+        if (vec3) {
+            x = parseFloat(vec3[1]); y = parseFloat(vec3[2]); z = parseFloat(vec3[3]);
+        } else {
+            const parts = raw.split(/[,\s]+/).map(Number).filter(n => !isNaN(n));
+            if (parts.length >= 3) {
+                x = parts[0]; y = parts[1]; z = parts[2];
+            }
+        }
+
+        if (x != null && y != null && z != null && !isNaN(x) && !isNaN(y) && !isNaN(z)) {
+            closeTpcds({ x, y, z });
+        }
+    }
+    e.stopPropagation();
+});
+
+tpcdsInput.addEventListener('keyup', (e) => e.stopPropagation());
+tpcdsInput.addEventListener('keypress', (e) => e.stopPropagation());
+
+// ESC global
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
-        nuiCallback('closeUI');
+        if (tpcdsOpen) {
+            closeTpcds();
+        } else {
+            nuiCallback('closeUI');
+        }
     }
 });

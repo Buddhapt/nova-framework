@@ -249,7 +249,7 @@ function Nova.Functions.Progressbar(label, duration, options, onComplete, onCanc
             local startTime = GetGameTimer()
             while GetGameTimer() - startTime < duration do
                 DisableAllControlActions(0)
-                Wait(0)
+                Wait(5)
             end
         end)
     end
@@ -497,7 +497,7 @@ RegisterNetEvent('nova:client:toggleNoclip', function()
                 DisableControlAction(0, 25, true)
                 DisableControlAction(0, 47, true)
 
-                Wait(0)
+                Wait(1)
             end
         end)
     else
@@ -509,18 +509,77 @@ RegisterNetEvent('nova:client:toggleNoclip', function()
     end
 end)
 
--- Godmode
-local godmodeEnabled = false
+-- TP Coords Input (NUI panel)
+RegisterNetEvent('nova:client:tpCoordsInput', function()
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = 'openTpcds' })
+end)
 
-RegisterNetEvent('nova:client:toggleGodmode', function()
-    godmodeEnabled = not godmodeEnabled
-    local ped = PlayerPedId()
-    SetEntityInvincible(ped, godmodeEnabled)
-    if godmodeEnabled then
-        Nova.Functions.Notify('Modo Deus ATIVADO.', 'success')
-    else
-        Nova.Functions.Notify('Modo Deus DESATIVADO.', 'info')
+RegisterNUICallback('tpcds_result', function(data, cb)
+    SetNuiFocus(false, false)
+
+    if data.cancelled then
+        Nova.Functions.Notify('Coordenadas canceladas.', 'error')
+        cb('ok')
+        return
     end
+
+    local x, y, z = tonumber(data.x), tonumber(data.y), tonumber(data.z)
+    if not x or not y or not z then
+        Nova.Functions.Notify('Formato inválido! Usa: x, y, z', 'error')
+        cb('ok')
+        return
+    end
+
+    local ped = PlayerPedId()
+    SetPedCoordsKeepVehicle(ped, x, y, z)
+    Nova.Functions.Notify(string.format('Teleportado para %.2f, %.2f, %.2f', x, y, z), 'success')
+    cb('ok')
+end)
+
+-- Copiar coordenadas para clipboard
+RegisterNetEvent('nova:client:copyCoords', function(coordStr, fullMsg)
+    SendNUIMessage({ action = 'copyToClipboard', text = coordStr })
+    Nova.Functions.Notify(fullMsg .. ' (copiado!)', 'success')
+end)
+
+-- God (heal completo + revive)
+RegisterNetEvent('nova:client:toggleGodmode', function()
+    local ped = PlayerPedId()
+
+    -- Forçar respawn do deathscreen se estiver morto
+    if GetResourceState('nova_deathscreen') == 'started' then
+        local ok, dead = pcall(exports['nova_deathscreen'].IsDead, exports['nova_deathscreen'])
+        if ok and dead then
+            TriggerEvent('nova:death:forceRespawn')
+            Wait(200)
+            ped = PlayerPedId()
+        end
+    end
+
+    -- Ressuscitar se o ped estiver morto nativamente
+    if IsEntityDead(ped) then
+        local coords = GetEntityCoords(ped)
+        NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
+        Wait(100)
+        ped = PlayerPedId()
+    end
+
+    -- Aplicar cura completa
+    SetEntityHealth(ped, GetEntityMaxHealth(ped))
+    SetPedArmour(ped, 100)
+    ClearPedBloodDamage(ped)
+
+    -- Limpar is_dead localmente
+    if Nova.PlayerData and Nova.PlayerData.metadata then
+        Nova.PlayerData.metadata.is_dead = false
+    end
+
+    -- Notificar HUD que reviveu
+    TriggerEvent('nova:client:onRevive')
+    pcall(function() exports['nova_hud']:toggleHud(true) end)
+
+    Nova.Functions.Notify('Vida, armadura, comida e bebida restaurados.', 'success')
 end)
 
 -- Invisibilidade

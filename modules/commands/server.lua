@@ -47,6 +47,30 @@ Nova.RegisterModule({
             Nova.Debug('Comando registado: /' .. name .. (group and (' [' .. group .. ']') or ''))
         end
 
+        --- Converte um charId (ID persistente visível no HUD) para source
+        --- Retorna source do jogador, ou nil se não encontrado
+        function Nova.Functions.ResolveTargetId(idInput, fallbackSource)
+            local id = tonumber(idInput)
+            if not id then return fallbackSource or nil end
+
+            -- Tentar primeiro por charId (ID persistente)
+            local player = Nova.Functions.GetPlayerByCharId(id)
+            if player then return player.source end
+
+            -- Fallback: tentar por source directo (compatibilidade)
+            local playerBySource = Nova.Functions.GetPlayer(id)
+            if playerBySource then return id end
+
+            return nil
+        end
+
+        --- Retorna o charId (ID persistente) de um source para exibição
+        function Nova.Functions.GetDisplayId(src)
+            if not src then return '?' end
+            local p = Nova.Functions.GetPlayer(src)
+            return p and p.charid or src
+        end
+
         Nova.Debug('[MODULE] Commands sistema registado')
     end,
 
@@ -56,13 +80,13 @@ Nova.RegisterModule({
         -- ============================================================
 
         Nova.Functions.RegisterCommand('novadmin', 'admin', function(source, args)
-            Nova.Functions.Notify(source, _L('admin_panel'), 'info')
+            Nova.Functions.Notify(source, 'Painel de administração NOVA', 'info')
         end, {
             help = 'Abre o painel de administração',
         })
 
         Nova.Functions.RegisterCommand('setgroup', 'superadmin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             local group = args[2]
 
             if not targetId or not group then
@@ -71,7 +95,7 @@ Nova.RegisterModule({
             end
 
             if not NovaGroups.AdminGroups[group] then
-                Nova.Functions.Notify(source, _L('admin_invalid_group', group), 'error')
+                Nova.Functions.Notify(source, 'Grupo inválido: ' .. group, 'error')
                 return
             end
 
@@ -85,7 +109,7 @@ Nova.RegisterModule({
             Nova.Database.SetUserGroup(target.identifier, group)
             Nova.Functions.RefreshPermissionCache(targetId)
 
-            Nova.Functions.Notify(source, _L('admin_group_set', target:GetFullName(), group), 'success')
+            Nova.Functions.Notify(source, 'Grupo de ' .. target:GetFullName() .. ' definido para ' .. group, 'success')
             Nova.Functions.Notify(targetId, 'O teu grupo foi alterado para: ' .. NovaGroups.AdminGroups[group].label, 'info')
         end, {
             help = 'Define o grupo de permissão de um jogador',
@@ -96,7 +120,7 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('givemoney', 'admin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             local moneyType = args[2]
             local amount = tonumber(args[3])
 
@@ -127,13 +151,13 @@ Nova.RegisterModule({
             help = 'Dá dinheiro a um jogador',
             params = {
                 { name = 'id', help = 'ID do jogador' },
-                { name = 'tipo', help = 'Tipo (cash, bank, black_money)' },
+                { name = 'tipo', help = 'Tipo (cash, bank, black_money, gems)' },
                 { name = 'quantidade', help = 'Quantidade' },
             },
         })
 
         Nova.Functions.RegisterCommand('removemoney', 'admin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             local moneyType = args[2]
             local amount = tonumber(args[3])
 
@@ -160,13 +184,13 @@ Nova.RegisterModule({
             help = 'Remove dinheiro de um jogador',
             params = {
                 { name = 'id', help = 'ID do jogador' },
-                { name = 'tipo', help = 'Tipo (cash, bank, black_money)' },
+                { name = 'tipo', help = 'Tipo (cash, bank, black_money, gems)' },
                 { name = 'quantidade', help = 'Quantidade' },
             },
         })
 
         Nova.Functions.RegisterCommand('setjob', 'admin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             local jobName = args[2]
             local grade = tonumber(args[3]) or 0
 
@@ -194,7 +218,7 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('setgang', 'admin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             local gangName = args[2]
             local grade = tonumber(args[3]) or 0
 
@@ -221,8 +245,117 @@ Nova.RegisterModule({
             },
         })
 
+        --- /group <id> <job_ou_gang> [grau] - Comando unificado para setar job OU gang
+        Nova.Functions.RegisterCommand('group', 'admin', function(source, args)
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
+            local groupName = args[2]
+
+            if not targetId or not groupName then
+                Nova.Functions.Notify(source, _L('command_usage', '/group [id] [job/gang] [grau]'), 'error')
+                return
+            end
+
+            local target = Nova.Functions.GetPlayer(targetId)
+            if not target then
+                Nova.Functions.Notify(source, _L('player_not_found'), 'error')
+                return
+            end
+
+            groupName = groupName:lower()
+
+            local gradeInput = args[3]
+            local grade = nil
+
+            local jobData = Nova.Functions.GetJob(groupName)
+            local gangData = Nova.Functions.GetGang(groupName)
+
+            if jobData then
+                if gradeInput then
+                    grade = tonumber(gradeInput)
+                    if not grade then
+                        for g, gData in pairs(jobData.grades) do
+                            if gData.label:lower() == gradeInput:lower() then
+                                grade = g
+                                break
+                            end
+                        end
+                    end
+                    if not grade then
+                        local available = {}
+                        for g, gData in pairs(jobData.grades) do
+                            available[#available + 1] = g .. '=' .. gData.label
+                        end
+                        table.sort(available)
+                        Nova.Functions.Notify(source, 'Grau inválido. Disponíveis: ' .. table.concat(available, ', '), 'error')
+                        return
+                    end
+                else
+                    grade = 0
+                end
+
+                if target:SetJob(groupName, grade) then
+                    local gradeLabel = jobData.grades[grade] and jobData.grades[grade].label or tostring(grade)
+                    Nova.Functions.Notify(source, target:GetFullName() .. ' setado como ' .. jobData.label .. ' [' .. gradeLabel .. ']', 'success')
+                end
+
+            elseif gangData then
+                if gradeInput then
+                    grade = tonumber(gradeInput)
+                    if not grade then
+                        for g, gData in pairs(gangData.grades) do
+                            if gData.label:lower() == gradeInput:lower() then
+                                grade = g
+                                break
+                            end
+                        end
+                    end
+                    if not grade then
+                        local available = {}
+                        for g, gData in pairs(gangData.grades) do
+                            available[#available + 1] = g .. '=' .. gData.label
+                        end
+                        table.sort(available)
+                        Nova.Functions.Notify(source, 'Grau inválido. Disponíveis: ' .. table.concat(available, ', '), 'error')
+                        return
+                    end
+                else
+                    grade = 0
+                end
+
+                if target:SetGang(groupName, grade) then
+                    local gradeLabel = gangData.grades[grade] and gangData.grades[grade].label or tostring(grade)
+                    Nova.Functions.Notify(source, target:GetFullName() .. ' setado como ' .. gangData.label .. ' [' .. gradeLabel .. ']', 'success')
+                end
+
+            else
+                local jobList, gangList = {}, {}
+                for name, data in pairs(Nova.Jobs or {}) do
+                    jobList[#jobList + 1] = name
+                end
+                for name, data in pairs(Nova.Gangs or {}) do
+                    if name ~= 'none' then gangList[#gangList + 1] = name end
+                end
+                table.sort(jobList)
+                table.sort(gangList)
+                Nova.Functions.Notify(source, 'Grupo "' .. groupName .. '" não encontrado.', 'error')
+                if #jobList > 0 then
+                    Nova.Functions.Notify(source, 'Jobs: ' .. table.concat(jobList, ', '), 'info')
+                end
+                if #gangList > 0 then
+                    Nova.Functions.Notify(source, 'Gangs: ' .. table.concat(gangList, ', '), 'info')
+                end
+            end
+        end, {
+            help = 'Setar job ou gang de um jogador (unificado)',
+            params = {
+                { name = 'id', help = 'ID do jogador' },
+                { name = 'grupo', help = 'Nome do job ou gang' },
+                { name = 'grau', help = 'Grau (número ou nome do cargo)' },
+            },
+        })
+
         Nova.Functions.RegisterCommand('giveitem', 'admin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             local itemName = args[2]
             local amount = tonumber(args[3]) or 1
 
@@ -242,11 +375,11 @@ Nova.RegisterModule({
             end)
 
             if ok and result then
-                Nova.Functions.Notify(source, _L('admin_give_item', itemName, amount, targetId), 'success')
+                Nova.Functions.Notify(source, 'Item \'' .. itemName .. '\' x' .. amount .. ' dado ao jogador ' .. Nova.Functions.GetDisplayId(targetId), 'success')
             elseif not ok then
                 target:AddItem(itemName, amount)
             else
-                Nova.Functions.Notify(source, _L('admin_give_item_error'), 'error')
+                Nova.Functions.Notify(source, 'Erro ao dar item (inventário cheio ou item inválido).', 'error')
             end
         end, {
             help = 'Dá um item a um jogador',
@@ -258,7 +391,7 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('tp', 'admin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             if not targetId then
                 Nova.Functions.Notify(source, _L('command_usage', '/tp [id]'), 'error')
                 return
@@ -279,7 +412,7 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('bring', 'admin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             if not targetId then
                 Nova.Functions.Notify(source, _L('command_usage', '/bring [id]'), 'error')
                 return
@@ -298,7 +431,7 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('kick', 'admin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             if not targetId then
                 Nova.Functions.Notify(source, _L('command_usage', '/kick [id] [motivo]'), 'error')
                 return
@@ -325,7 +458,7 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('ban', 'superadmin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             if not targetId then
                 Nova.Functions.Notify(source, _L('command_usage', '/ban [id] [motivo]'), 'error')
                 return
@@ -361,17 +494,17 @@ Nova.RegisterModule({
             -- Verificar se o identifier existe e está banido
             MySQL.single('SELECT id, name, banned FROM nova_users WHERE identifier = ?', { identifier }, function(user)
                 if not user then
-                    Nova.Functions.Notify(source, _L('admin_user_not_found'), 'error')
+                    Nova.Functions.Notify(source, 'Utilizador não encontrado com esse identifier.', 'error')
                     return
                 end
 
                 if user.banned ~= 1 then
-                    Nova.Functions.Notify(source, _L('admin_not_banned', user.name or identifier), 'info')
+                    Nova.Functions.Notify(source, 'O utilizador ' .. (user.name or identifier) .. ' não está banido.', 'info')
                     return
                 end
 
                 Nova.Database.UnbanUser(identifier)
-                Nova.Functions.Notify(source, _L('admin_unbanned', user.name or identifier), 'success')
+                Nova.Functions.Notify(source, 'Utilizador ' .. (user.name or identifier) .. ' foi desbanido com sucesso.', 'success')
                 Nova.Functions.DiscordLog('Admin: Unban',
                     string.format('**Admin:** %s\n**Identifier:** %s\n**Nome:** %s',
                         GetPlayerName(source), identifier, user.name or 'N/A'),
@@ -385,7 +518,7 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('revive', 'admin', function(source, args)
-            local targetId = tonumber(args[1]) or source
+            local targetId = Nova.Functions.ResolveTargetId(args[1], source)
             local target = Nova.Functions.GetPlayer(targetId)
             if target then
                 target:Revive()
@@ -399,7 +532,7 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('heal', 'admin', function(source, args)
-            local targetId = tonumber(args[1]) or source
+            local targetId = Nova.Functions.ResolveTargetId(args[1], source)
             local target = Nova.Functions.GetPlayer(targetId)
             if target then
                 target:Heal()
@@ -458,20 +591,20 @@ Nova.RegisterModule({
             local targetId = source
             local model = args[1]
 
-            -- Se o primeiro argumento é um número e há segundo argumento, é /addcar [id] [modelo]
+            -- Se o primeiro argumento é um ID e há segundo argumento, é /addcar [id] [modelo]
             if tonumber(args[1]) and args[2] then
-                targetId = tonumber(args[1])
+                targetId = Nova.Functions.ResolveTargetId(args[1], source)
                 model = args[2]
             end
 
             if not model or model == '' then
-                Nova.Functions.Notify(source, _L('admin_addcar_usage'), 'error')
+                Nova.Functions.Notify(source, 'Uso: /addcar [modelo] ou /addcar [id] [modelo]', 'error')
                 return
             end
 
             local targetPed = GetPlayerPed(targetId)
             if not targetPed or not DoesEntityExist(targetPed) then
-                Nova.Functions.Notify(source, _L('player_not_found'), 'error')
+                Nova.Functions.Notify(source, 'Jogador não encontrado.', 'error')
                 return
             end
 
@@ -495,9 +628,9 @@ Nova.RegisterModule({
 
             TriggerClientEvent('nova:client:spawnVehicle', targetId, model, plate)
             if targetId == source then
-                Nova.Functions.Notify(source, _L('admin_vehicle_spawned', model, plate), 'success')
+                Nova.Functions.Notify(source, 'Veículo \'' .. model .. '\' gerado e registado! Placa: ' .. plate, 'success')
             else
-                Nova.Functions.Notify(source, _L('admin_vehicle_spawned_target', model, targetId, plate), 'success')
+                Nova.Functions.Notify(source, 'Veículo \'' .. model .. '\' gerado para jogador ' .. Nova.Functions.GetDisplayId(targetId) .. '. Placa: ' .. plate, 'success')
             end
         end, {
             help = 'Gera um veículo e regista na garagem',
@@ -534,11 +667,11 @@ Nova.RegisterModule({
             local y = tonumber(args[2])
             local z = tonumber(args[3])
             if not x or not y or not z then
-                Nova.Functions.Notify(source, _L('admin_tpcoords_usage'), 'error')
+                Nova.Functions.Notify(source, 'Uso: /tpcoords [x] [y] [z]', 'error')
                 return
             end
             TriggerClientEvent('nova:client:teleport', source, x, y, z)
-            Nova.Functions.Notify(source, _L('admin_teleported_coords', x, y, z), 'success')
+            Nova.Functions.Notify(source, string.format('Teleportado para %.1f, %.1f, %.1f', x, y, z), 'success')
         end, {
             help = 'Teleporta para coordenadas específicas',
             params = {
@@ -552,16 +685,40 @@ Nova.RegisterModule({
         -- COMANDOS DE JOGADOR
         -- ============================================================
 
-        Nova.Functions.RegisterCommand('noclip', 'admin', function(source, args)
+        Nova.Functions.RegisterCommand('nc', 'admin', function(source, args)
             TriggerClientEvent('nova:client:toggleNoclip', source)
         end, {
             help = 'Ativa/desativa noclip',
         })
 
         Nova.Functions.RegisterCommand('god', 'admin', function(source, args)
-            TriggerClientEvent('nova:client:toggleGodmode', source)
+            local target = Nova.Functions.ResolveTargetId(args[1], source)
+            TriggerClientEvent('nova:client:toggleGodmode', target)
+
+            -- Limpar is_dead no server
+            local player = Nova.Functions.GetPlayer(target)
+            if player and player.metadata and player.metadata.is_dead then
+                player:SetMetadata('is_dead', false)
+                player:SetMetadata('health', 200)
+            end
+
+            -- Restaurar hunger/thirst
+            if player then
+                player.metadata.hunger = 100
+                player.metadata.thirst = 100
+                player:UpdateClient('metadata')
+            end
+
+            if target ~= source then
+                local targetPlayer = Nova.Functions.GetPlayer(target)
+                local displayId = targetPlayer and targetPlayer.charid or target
+                Nova.Functions.Notify(source, 'Jogador ID ' .. displayId .. ' curado.', 'success')
+            end
         end, {
-            help = 'Ativa/desativa modo deus',
+            help = 'Cura completa (vida, armadura, comida, bebida) + revive',
+            params = {
+                { name = 'id', help = 'ID do jogador (opcional)', type = 'number', optional = true },
+            },
         })
 
         Nova.Functions.RegisterCommand('invisible', 'admin', function(source, args)
@@ -570,25 +727,34 @@ Nova.RegisterModule({
             help = 'Ativa/desativa invisibilidade',
         })
 
+        Nova.Functions.RegisterCommand('tpcds', 'admin', function(source, args)
+            TriggerClientEvent('nova:client:tpCoordsInput', source)
+        end, {
+            help = 'Teleportar para coordenadas (abre painel)',
+        })
+
         Nova.Functions.RegisterCommand('coords', nil, function(source, args)
             local ped = GetPlayerPed(source)
             local coords = GetEntityCoords(ped)
             local heading = GetEntityHeading(ped)
-            local msg = string.format('X: %.2f | Y: %.2f | Z: %.2f | H: %.2f', coords.x, coords.y, coords.z, heading)
-            Nova.Functions.Notify(source, msg, 'info')
+            local coordStr = string.format('%.2f, %.2f, %.2f', coords.x, coords.y, coords.z)
+            local fullMsg = string.format('X: %.2f | Y: %.2f | Z: %.2f | H: %.2f', coords.x, coords.y, coords.z, heading)
+            TriggerClientEvent('nova:client:copyCoords', source, coordStr, fullMsg)
         end, {
-            help = 'Mostra as tuas coordenadas atuais',
+            help = 'Copia as tuas coordenadas para o clipboard',
         })
 
-        Nova.Functions.RegisterCommand('players', nil, function(source, args)
+        Nova.Functions.RegisterCommand('status', nil, function(source, args)
             local count = 0
             local list = {}
             for _, playerId in ipairs(GetPlayers()) do
                 count = count + 1
+                local player = Nova.Functions.GetPlayer(tonumber(playerId))
+                local displayId = player and player.charid or playerId
                 local name = GetPlayerName(playerId)
-                list[#list + 1] = '[' .. playerId .. '] ' .. name
+                list[#list + 1] = '[' .. displayId .. '] ' .. name
             end
-            Nova.Functions.Notify(source, _L('admin_players_online', count), 'info')
+            Nova.Functions.Notify(source, 'Jogadores online: ' .. count, 'info')
         end, {
             help = 'Lista jogadores online',
         })
@@ -598,20 +764,20 @@ Nova.RegisterModule({
         -- ============================================================
 
         Nova.Functions.RegisterCommand('clearinv', 'admin', function(source, args)
-            local targetId = tonumber(args[1])
+            local targetId = Nova.Functions.ResolveTargetId(args[1])
             if not targetId then
-                Nova.Functions.Notify(source, _L('admin_clearinv_usage'), 'error')
+                Nova.Functions.Notify(source, 'Uso: /clearinv [id]', 'error')
                 return
             end
             local target = Nova.Functions.GetPlayer(targetId)
             if not target then
-                Nova.Functions.Notify(source, _L('player_not_found'), 'error')
+                Nova.Functions.Notify(source, 'Jogador não encontrado.', 'error')
                 return
             end
             pcall(function()
-                exports['nova_core']:SetPlayerInventory(targetId, {})
+                exports['nova_inventory']:ClearInventory(targetId)
             end)
-            Nova.Functions.Notify(source, _L('admin_clearinv_done', targetId), 'success')
+            Nova.Functions.Notify(source, 'Inventário do jogador ' .. Nova.Functions.GetDisplayId(targetId) .. ' limpo.', 'success')
             Nova.Functions.Notify(targetId, 'O teu inventário foi limpo por um administrador.', 'info')
         end, {
             help = 'Limpa o inventário de um jogador',
@@ -619,13 +785,13 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('sethunger', 'admin', function(source, args)
-            local targetId = tonumber(args[1]) or source
+            local targetId = Nova.Functions.ResolveTargetId(args[1], source)
             local value = tonumber(args[2]) or 100
             value = math.max(0, math.min(100, value))
             pcall(function()
                 exports['nova_core']:SetPlayerMetadata(targetId, 'hunger', value)
             end)
-            Nova.Functions.Notify(source, _L('admin_hunger_set', targetId, value), 'success')
+            Nova.Functions.Notify(source, 'Fome do jogador ' .. Nova.Functions.GetDisplayId(targetId) .. ' definida para ' .. value, 'success')
         end, {
             help = 'Define a fome de um jogador',
             params = {
@@ -635,13 +801,13 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('setthirst', 'admin', function(source, args)
-            local targetId = tonumber(args[1]) or source
+            local targetId = Nova.Functions.ResolveTargetId(args[1], source)
             local value = tonumber(args[2]) or 100
             value = math.max(0, math.min(100, value))
             pcall(function()
                 exports['nova_core']:SetPlayerMetadata(targetId, 'thirst', value)
             end)
-            Nova.Functions.Notify(source, _L('admin_thirst_set', targetId, value), 'success')
+            Nova.Functions.Notify(source, 'Sede do jogador ' .. Nova.Functions.GetDisplayId(targetId) .. ' definida para ' .. value, 'success')
         end, {
             help = 'Define a sede de um jogador',
             params = {
@@ -651,15 +817,48 @@ Nova.RegisterModule({
         })
 
         Nova.Functions.RegisterCommand('setarmor', 'admin', function(source, args)
-            local targetId = tonumber(args[1]) or source
+            local targetId = Nova.Functions.ResolveTargetId(args[1], source)
             local value = tonumber(args[2]) or 100
             TriggerClientEvent('nova:client:setArmor', targetId, value)
-            Nova.Functions.Notify(source, _L('admin_armor_set', targetId, value), 'success')
+            Nova.Functions.Notify(source, 'Armadura do jogador ' .. Nova.Functions.GetDisplayId(targetId) .. ' definida para ' .. value, 'success')
         end, {
             help = 'Define a armadura de um jogador',
             params = {
                 { name = 'id', help = 'ID do jogador' },
                 { name = 'valor', help = 'Valor (0-100)' },
+            },
+        })
+
+        -- ============================================================
+        -- COMANDO /CDS (Atalho para coordenadas)
+        -- ============================================================
+
+        Nova.Functions.RegisterCommand('cds', nil, function(source, args)
+            local ped = GetPlayerPed(source)
+            local coords = GetEntityCoords(ped)
+            local heading = GetEntityHeading(ped)
+            local msg = string.format('X: %.2f | Y: %.2f | Z: %.2f | H: %.2f', coords.x, coords.y, coords.z, heading)
+            Nova.Functions.Notify(source, msg, 'info')
+        end, {
+            help = 'Mostra as tuas coordenadas atuais',
+        })
+
+        Nova.Functions.RegisterCommand('pesoadmin', 'admin', function(source, args)
+            local target = Nova.Functions.ResolveTargetId(args[1], source)
+            local targetPlayer = Nova.Functions.GetPlayer(target)
+            local displayId = targetPlayer and targetPlayer.charid or target
+            local ok, enabled = exports['nova_inventory']:ToggleInfiniteWeight(target)
+            if ok then
+                if enabled then
+                    Nova.Functions.Notify(source, 'Peso infinito ATIVADO para ID ' .. displayId, 'success')
+                else
+                    Nova.Functions.Notify(source, 'Peso infinito DESATIVADO para ID ' .. displayId, 'error')
+                end
+            end
+        end, {
+            help = 'Ativar/desativar peso infinito no inventário',
+            params = {
+                { name = 'id', help = 'ID do jogador (opcional, default = tu)', type = 'number', optional = true },
             },
         })
 

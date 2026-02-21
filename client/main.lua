@@ -32,7 +32,7 @@ RegisterNetEvent('nova:client:onPlayerLoaded', function(playerData)
 
     -- Change player ped model to the correct freemode model
     RequestModel(targetModel)
-    while not HasModelLoaded(targetModel) do Wait(0) end
+    while not HasModelLoaded(targetModel) do Wait(100) end
     SetPlayerModel(PlayerId(), targetModel)
     local ped = PlayerPedId()
     SetPedDefaultComponentVariation(ped)
@@ -61,7 +61,8 @@ RegisterNetEvent('nova:client:onPlayerLoaded', function(playerData)
     SetEntityHealth(ped, health)
     SetPedArmour(ped, armor)
 
-    -- Se está morto, manter morto
+    -- Se saiu morto, manter morto ao reconectar (anti-exploit)
+    -- Nota: no restart do server, is_dead é limpo na DB automaticamente
     if playerData.metadata and playerData.metadata.is_dead then
         SetEntityHealth(ped, 0)
     end
@@ -149,6 +150,7 @@ RegisterNetEvent('nova:client:heal', function()
         Nova.PlayerData.metadata.hunger = 100
         Nova.PlayerData.metadata.thirst = 100
         Nova.PlayerData.metadata.stress = 0
+        TriggerEvent('nova:client:onPlayerDataUpdate', 'metadata', Nova.PlayerData.metadata)
     end
 
     Nova.Functions.Notify('Foste curado!', 'success')
@@ -191,6 +193,9 @@ if NovaConfig.Needs.enabled then
                     hunger = meta.hunger,
                     thirst = meta.thirst,
                 })
+
+                -- Notificar HUD e outros resources
+                TriggerEvent('nova:client:onPlayerDataUpdate', 'metadata', meta)
             end
         end
     end)
@@ -229,7 +234,14 @@ CreateThread(function()
             local ped = PlayerPedId()
             local isDead = IsEntityDead(ped)
 
-            if isDead and Nova.PlayerData.metadata and not Nova.PlayerData.metadata.is_dead then
+            -- Só detectar morte se nova_deathscreen não estiver a gerir
+            local deathscreenActive = false
+            if GetResourceState('nova_deathscreen') == 'started' then
+                local ok, result = pcall(exports['nova_deathscreen'].IsDead, exports['nova_deathscreen'])
+                if ok then deathscreenActive = result end
+            end
+
+            if isDead and Nova.PlayerData.metadata and not Nova.PlayerData.metadata.is_dead and not deathscreenActive then
                 Nova.PlayerData.metadata.is_dead = true
                 TriggerServerEvent('nova:server:onPlayerDeath')
                 TriggerEvent('nova:client:onPlayerDeath')
@@ -353,6 +365,7 @@ end)
 -- BLOQUEAR WEAPON WHEEL (TAB) - usar apenas hotbar do inventário
 -- ============================================================
 
+-- Must run every frame: DisableControlAction is per-frame in FiveM.
 CreateThread(function()
     while true do
         -- 37 = INPUT_SELECT_WEAPON (Tab / Weapon Wheel)

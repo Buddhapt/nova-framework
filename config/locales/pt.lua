@@ -60,27 +60,6 @@ NovaLocale.RegisterLocale('pt', {
     ['admin_revive'] = 'Reviveste %s.',
     ['admin_heal'] = 'Curaste %s.',
 
-    -- Comandos Admin (extended)
-    ['admin_panel'] = 'Painel de administração NOVA',
-    ['admin_invalid_group'] = 'Grupo inválido: %s',
-    ['admin_group_set'] = 'Grupo de %s definido para %s',
-    ['admin_give_item'] = 'Item \'%s\' x%s dado ao jogador %s',
-    ['admin_give_item_error'] = 'Erro ao dar item (inventário cheio ou item inválido).',
-    ['admin_user_not_found'] = 'Utilizador não encontrado com esse identifier.',
-    ['admin_not_banned'] = 'O utilizador %s não está banido.',
-    ['admin_unbanned'] = 'Utilizador %s foi desbanido com sucesso.',
-    ['admin_addcar_usage'] = 'Uso: /addcar [modelo] ou /addcar [id] [modelo]',
-    ['admin_vehicle_spawned'] = 'Veículo \'%s\' gerado e registado! Placa: %s',
-    ['admin_vehicle_spawned_target'] = 'Veículo \'%s\' gerado para jogador %s. Placa: %s',
-    ['admin_tpcoords_usage'] = 'Uso: /tpcoords [x] [y] [z]',
-    ['admin_teleported_coords'] = 'Teleportado para %.1f, %.1f, %.1f',
-    ['admin_players_online'] = 'Jogadores online: %s',
-    ['admin_clearinv_usage'] = 'Uso: /clearinv [id]',
-    ['admin_clearinv_done'] = 'Inventário do jogador %s limpo.',
-    ['admin_hunger_set'] = 'Fome do jogador %s definida para %s',
-    ['admin_thirst_set'] = 'Sede do jogador %s definida para %s',
-    ['admin_armor_set'] = 'Armadura do jogador %s definida para %s',
-
     -- Personagem
     ['char_create_success'] = 'Personagem criado com sucesso!',
     ['char_delete_success'] = 'Personagem eliminado com sucesso.',

@@ -28,6 +28,17 @@ CreateThread(function()
     local initCount, startCount = Nova.LoadModules()
     Nova.Print(string.format('Módulos carregados: %d inicializados, %d arrancados', initCount, startCount))
 
+    -- Limpar estado de morte de todos os personagens (server restart = todos vivos)
+    MySQL.update([[
+        UPDATE nova_characters 
+        SET metadata = JSON_SET(metadata, '$.is_dead', false, '$.health', 200)
+        WHERE JSON_EXTRACT(metadata, '$.is_dead') = true
+    ]], {}, function(affected)
+        if affected and affected > 0 then
+            Nova.Print(string.format('Estado de morte limpo para %d personagem(ns) após restart', affected))
+        end
+    end)
+
     isFrameworkReady = true
     Nova.Print(_L('framework_started', Nova.Version))
     Nova.Print(string.format('Servidor: %s', NovaConfig.ServerName))
@@ -144,7 +155,7 @@ RegisterNetEvent('nova:server:loadCharacter', function(citizenId)
             Nova.Print(string.format('Personagem carregado: %s (%s) - Source: %s',
                 player:GetFullName(), player.citizenid, source))
 
-            -- Trigger evento para outros resources (wrapped para preservar métodos cross-resource)
+            -- Trigger evento para outros resources
             TriggerEvent('nova:server:onPlayerLoaded', source, Nova.WrapPlayerForExport(player))
         end)
     end)

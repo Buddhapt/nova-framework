@@ -54,9 +54,9 @@ local playerData = exports['nova_core']:GetPlayerData()
 
 ## Documentation
 
-Full documentation with exports, events, callbacks, player object reference, and development guides:
+Full documentation with exports, events, callbacks, player object reference, and guides:
 
-### **[Read the Docs](https://novaframeworkdoc.gitbook.io/novaframework/)**
+### [Read the Docs](https://novaframeworkdoc.gitbook.io/novaframework/)
 
 ## License
 

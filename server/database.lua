@@ -140,7 +140,7 @@ function Nova.Database.CreateCharacter(userId, citizenId, charData, callback)
 
     MySQL.insert([[
         INSERT INTO nova_characters 
-        (user_id, citizenid, firstname, lastname, dateofbirth, gender, nationality, phone, cash, bank, black_money, position, metadata)
+        (user_id, citizenid, firstname, lastname, dateofbirth, gender, phone, cash, bank, black_money, gems, position, metadata)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ]], {
         userId,
@@ -149,11 +149,11 @@ function Nova.Database.CreateCharacter(userId, citizenId, charData, callback)
         charData.lastname or '',
         charData.dateofbirth or '01/01/2000',
         charData.gender or 0,
-        charData.nationality or 'Português',
         charData.phone,
         NovaConfig.MoneyTypes.cash.default,
         NovaConfig.MoneyTypes.bank.default,
         NovaConfig.MoneyTypes.black_money.default,
+        NovaConfig.MoneyTypes.gems.default,
         position,
         metadata,
     }, function(id)
@@ -188,6 +188,7 @@ function Nova.Database.SaveCharacter(citizenId, data)
             cash = ?,
             bank = ?,
             black_money = ?,
+            gems = ?,
             job = ?,
             job_grade = ?,
             job_duty = ?,
@@ -206,6 +207,7 @@ function Nova.Database.SaveCharacter(citizenId, data)
         data.money.cash,
         data.money.bank,
         data.money.black_money,
+        data.money.gems or 0,
         data.job.name,
         data.job.grade,
         data.job.duty and 1 or 0,

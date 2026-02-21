@@ -337,6 +337,73 @@ NovaItems.Register('weapon_assaultrifle', {
     image = 'weapon_assaultrifle.png',
 })
 
+NovaItems.Register('weapon_specialcarbine', {
+    label = 'Special Carbine',
+    weight = 3600,
+    type = 'weapon',
+    useable = true,
+    unique = true,
+    shouldClose = true,
+    description = 'Um rifle de assalto de alta precisão.',
+    image = 'weapon_specialcarbine.png',
+})
+
+NovaItems.Register('weapon_bullpuprifle', {
+    label = 'Bullpup Rifle',
+    weight = 3400,
+    type = 'weapon',
+    useable = true,
+    unique = true,
+    shouldClose = true,
+    description = 'Um rifle bullpup compacto e potente.',
+    image = 'weapon_bullpuprifle.png',
+})
+
+-- SMGs adicionais
+NovaItems.Register('weapon_machinepistol', {
+    label = 'Tec-9',
+    weight = 2200,
+    type = 'weapon',
+    useable = true,
+    unique = true,
+    shouldClose = true,
+    description = 'Uma pistola automática compacta.',
+    image = 'weapon_machinepistol.png',
+})
+
+NovaItems.Register('weapon_pistol50', {
+    label = 'Pistol .50',
+    weight = 2000,
+    type = 'weapon',
+    useable = true,
+    unique = true,
+    shouldClose = true,
+    description = 'Uma pistola de alto calibre .50.',
+    image = 'weapon_pistol50.png',
+})
+
+NovaItems.Register('weapon_combatpdw', {
+    label = 'Combat PDW',
+    weight = 2600,
+    type = 'weapon',
+    useable = true,
+    unique = true,
+    shouldClose = true,
+    description = 'Uma PDW de combate compacta.',
+    image = 'weapon_combatpdw.png',
+})
+
+NovaItems.Register('weapon_minismg', {
+    label = 'Mini SMG',
+    weight = 2100,
+    type = 'weapon',
+    useable = true,
+    unique = true,
+    shouldClose = true,
+    description = 'Uma submetralhadora ultra compacta.',
+    image = 'weapon_minismg.png',
+})
+
 -- Corpo a corpo
 NovaItems.Register('weapon_bat', {
     label = 'Taco de Basebol',
@@ -442,4 +509,105 @@ NovaItems.Register('radiocell', {
     type = 'item',
     useable = true,
     description = 'Uma bateria para recarregar o rádio portátil.',
+})
+
+-- ============================================================
+-- ITEMS DE SPRAY (nova_sprays)
+-- ============================================================
+NovaItems.Register('spraycan', {
+    label = 'Lata de Spray',
+    weight = 500,
+    type = 'item',
+    useable = true,
+    shouldClose = true,
+    description = 'Uma lata de spray para marcar território.',
+    image = 'spraycan.png',
+})
+
+NovaItems.Register('sprayremover', {
+    label = 'Removedor de Spray',
+    weight = 800,
+    type = 'item',
+    useable = true,
+    shouldClose = true,
+    description = 'Kit de limpeza para remover graffitis.',
+    image = 'sprayremover.png',
+})
+
+-- ============================================================
+-- ITEMS DE DROGAS (nova_sprays - drug selling)
+-- ============================================================
+NovaItems.Register('cokebaggy', {
+    label = 'Saqueta de Cocaína',
+    weight = 100,
+    type = 'item',
+    useable = false,
+    description = 'Um saquinho de pó branco.',
+    image = 'cokebaggy.png',
+})
+
+NovaItems.Register('weed_baggy', {
+    label = 'Saqueta de Erva',
+    weight = 100,
+    type = 'item',
+    useable = false,
+    description = 'Um saquinho de erva verde.',
+    image = 'weed_baggy.png',
+})
+
+NovaItems.Register('meth_baggy', {
+    label = 'Saqueta de Meta',
+    weight = 100,
+    type = 'item',
+    useable = false,
+    description = 'Um saquinho de cristais azulados.',
+    image = 'meth_baggy.png',
+})
+
+-- ============================================================
+-- MATERIAIS DE CRAFT (nova_craft)
+-- ============================================================
+NovaItems.Register('diamond', {
+    label = 'Diamante',
+    weight = 50,
+    type = 'item',
+    useable = false,
+    description = 'Pedra preciosa de alta pureza.',
+    image = 'diamond.png',
+})
+
+NovaItems.Register('copper', {
+    label = 'Cobre',
+    weight = 80,
+    type = 'item',
+    useable = false,
+    description = 'Barra de cobre refinado.',
+    image = 'copper.png',
+})
+
+NovaItems.Register('steel', {
+    label = 'Aço',
+    weight = 200,
+    type = 'item',
+    useable = false,
+    description = 'Lingote de aço temperado.',
+    image = 'steel.png',
+})
+
+NovaItems.Register('gunpowder', {
+    label = 'Pólvora',
+    weight = 60,
+    type = 'item',
+    useable = false,
+    description = 'Pó de pólvora para munições.',
+    image = 'gunpowder.png',
+})
+
+NovaItems.Register('plastic', {
+    label = 'Plástico',
+    weight = 40,
+    type = 'item',
+    useable = false,
+    description = 'Polímero moldável de alta resistência.',
+    image = 'plastic.png',
 })

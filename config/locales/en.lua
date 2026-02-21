@@ -62,27 +62,6 @@ NovaLocale.RegisterLocale('en', {
     ['admin_revive'] = 'You revived %s.',
     ['admin_heal'] = 'You healed %s.',
 
-    -- Admin Commands (extended)
-    ['admin_panel'] = 'NOVA Administration Panel',
-    ['admin_invalid_group'] = 'Invalid group: %s',
-    ['admin_group_set'] = 'Group of %s set to %s',
-    ['admin_give_item'] = 'Item \'%s\' x%s given to player %s',
-    ['admin_give_item_error'] = 'Error giving item (inventory full or invalid item).',
-    ['admin_user_not_found'] = 'User not found with that identifier.',
-    ['admin_not_banned'] = 'User %s is not banned.',
-    ['admin_unbanned'] = 'User %s has been unbanned successfully.',
-    ['admin_addcar_usage'] = 'Usage: /addcar [model] or /addcar [id] [model]',
-    ['admin_vehicle_spawned'] = 'Vehicle \'%s\' spawned and registered! Plate: %s',
-    ['admin_vehicle_spawned_target'] = 'Vehicle \'%s\' spawned for player %s. Plate: %s',
-    ['admin_tpcoords_usage'] = 'Usage: /tpcoords [x] [y] [z]',
-    ['admin_teleported_coords'] = 'Teleported to %.1f, %.1f, %.1f',
-    ['admin_players_online'] = 'Players online: %s',
-    ['admin_clearinv_usage'] = 'Usage: /clearinv [id]',
-    ['admin_clearinv_done'] = 'Player %s inventory cleared.',
-    ['admin_hunger_set'] = 'Player %s hunger set to %s',
-    ['admin_thirst_set'] = 'Player %s thirst set to %s',
-    ['admin_armor_set'] = 'Player %s armor set to %s',
-
     -- Character
     ['char_create_success'] = 'Character created successfully!',
     ['char_delete_success'] = 'Character deleted successfully.',

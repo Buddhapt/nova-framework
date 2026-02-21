@@ -17,6 +17,27 @@
         </div>
     </div>
 
+    <!-- Painel TP Coords -->
+    <div id="tpcds-overlay" class="hidden">
+        <div id="tpcds-panel">
+            <div class="tpcds-header">
+                <div class="tpcds-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                </div>
+                <span>Teleportar</span>
+            </div>
+            <div class="tpcds-body">
+                <input type="text" id="tpcds-input" placeholder="x, y, z" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="tpcds-footer">
+                <span class="tpcds-hint">ENTER para confirmar &nbsp;·&nbsp; ESC para cancelar</span>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

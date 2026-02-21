@@ -26,6 +26,7 @@ function Nova.Player.New(source, userData, charData)
     self.userId = userData.id
 
     -- Dados do personagem
+    self.charid = charData.id
     self.citizenid = charData.citizenid
 
     self.charinfo = {
@@ -33,7 +34,6 @@ function Nova.Player.New(source, userData, charData)
         lastname = charData.lastname or '',
         dateofbirth = charData.dateofbirth or '01/01/2000',
         gender = charData.gender or 0,
-        nationality = charData.nationality or 'Português',
         phone = charData.phone,
     }
 
@@ -42,6 +42,7 @@ function Nova.Player.New(source, userData, charData)
         cash = charData.cash or NovaConfig.MoneyTypes.cash.default,
         bank = charData.bank or NovaConfig.MoneyTypes.bank.default,
         black_money = charData.black_money or NovaConfig.MoneyTypes.black_money.default,
+        gems = charData.gems or NovaConfig.MoneyTypes.gems.default,
     }
 
     -- Emprego
@@ -119,6 +120,7 @@ end
 function Nova.Player:GetData()
     return {
         source = self.source,
+        charid = self.charid,
         identifier = self.identifier,
         name = self.name,
         group = self.group,
@@ -168,7 +170,7 @@ end
 ---@param amount number Quantidade
 ---@param reason string|nil Motivo
 ---@return boolean
-function Nova.Player:AddMoney(moneyType, amount, reason)
+function Nova.Player:AddMoney(moneyType, amount, reason, silent)
     if not Nova.Auth:IsVerified() then return false end
     if not self.money[moneyType] then
         Nova.Functions.Notify(self.source, _L('money_invalid_type'), 'error')
@@ -179,9 +181,10 @@ function Nova.Player:AddMoney(moneyType, amount, reason)
 
     self.money[moneyType] = self.money[moneyType] + amount
 
-    -- Notificar o jogador
-    local label = NovaConfig.MoneyTypes[moneyType] and NovaConfig.MoneyTypes[moneyType].label or moneyType
-    Nova.Functions.Notify(self.source, _L('money_received', Nova.FormatMoney(amount), label), 'success')
+    if not silent then
+        local label = NovaConfig.MoneyTypes[moneyType] and NovaConfig.MoneyTypes[moneyType].label or moneyType
+        Nova.Functions.Notify(self.source, _L('money_received', Nova.FormatMoney(amount), label), 'success')
+    end
 
     -- Atualizar o client
     self:UpdateClient('money')
@@ -295,9 +298,8 @@ function Nova.Player:SetJob(jobName, grade)
 
     Nova.Functions.Notify(self.source, _L('job_set', jobData.label), 'success')
     self:UpdateClient('job')
+    self:Save()
 
-    -- Evento seguro: source + nome do novo job (sem grade details/oldJob completo)
-    -- Quem precisar dos detalhes, use exports['nova_core']:GetPlayer(source):GetJob()
     TriggerEvent('nova:server:onJobChange', self.source, self.job.name, oldJob and oldJob.name or nil)
 
     return true
@@ -357,6 +359,7 @@ function Nova.Player:SetGang(gangName, grade)
 
     Nova.Functions.Notify(self.source, _L('gang_set', gangData.label), 'success')
     self:UpdateClient('gang')
+    self:Save()
 
     -- Evento seguro: source + nomes (sem detalhes de grade)
     TriggerEvent('nova:server:onGangChange', self.source, self.gang.name, oldGang and oldGang.name or nil)

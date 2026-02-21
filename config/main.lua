@@ -28,6 +28,7 @@ NovaConfig.MoneyTypes = {
     cash = { label = 'Dinheiro', default = 5000 },
     bank = { label = 'Banco', default = 10000 },
     black_money = { label = 'Dinheiro Sujo', default = 0 },
+    gems = { label = 'Gemas', default = 0 },
 }
 
 -- ============================================================
@@ -62,7 +63,6 @@ NovaConfig.DefaultCharInfo = {
     lastname = '',
     dateofbirth = '01/01/2000',
     gender = 0,       -- 0 = masculino, 1 = feminino
-    nationality = 'Português',
     phone = nil,
 }
 

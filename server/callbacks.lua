@@ -74,9 +74,9 @@ Nova.Functions.CreateCallback('nova:server:getCharacters', function(source, cb)
                     lastname = char.lastname,
                     dateofbirth = char.dateofbirth,
                     gender = char.gender,
-                    nationality = char.nationality,
                     cash = char.cash,
                     bank = char.bank,
+                    gems = char.gems,
                     job = char.job,
                     job_grade = char.job_grade,
                 })

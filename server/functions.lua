@@ -70,6 +70,28 @@ function Nova.Functions.GetPlayerByCitizenId(citizenId)
     return nil
 end
 
+--- Obtém um jogador pelo CharID (ID persistente da base de dados)
+---@param charId number ID do personagem na DB
+---@return table|nil Player object
+function Nova.Functions.GetPlayerByCharId(charId)
+    charId = tonumber(charId)
+    if not charId then return nil end
+    for _, player in pairs(Nova.Players) do
+        if player.charid == charId then
+            return player
+        end
+    end
+    return nil
+end
+
+--- Converte charId para source
+---@param charId number
+---@return number|nil source
+function Nova.Functions.CharIdToSource(charId)
+    local player = Nova.Functions.GetPlayerByCharId(charId)
+    return player and player.source or nil
+end
+
 --- Obtém todos os jogadores carregados
 ---@return table
 function Nova.Functions.GetPlayers()
@@ -261,6 +283,15 @@ end)
 exports('GetPlayerByCitizenId', function(citizenId)
     if not Nova.Auth:Gate('GetPlayerByCitizenId') then return nil end
     return Nova.WrapPlayerForExport(Nova.Functions.GetPlayerByCitizenId(citizenId))
+end)
+
+exports('GetPlayerByCharId', function(charId)
+    if not Nova.Auth:Gate('GetPlayerByCharId') then return nil end
+    return Nova.WrapPlayerForExport(Nova.Functions.GetPlayerByCharId(charId))
+end)
+
+exports('CharIdToSource', function(charId)
+    return Nova.Functions.CharIdToSource(charId)
 end)
 
 exports('GetPlayers', function()
